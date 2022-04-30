@@ -7,7 +7,7 @@ using Unity.Transforms;
 using UnityEngine;
 
 [BurstCompile]
-[UpdateBefore(typeof(VelocityComponent))]
+[UpdateBefore(typeof(VelocitySystem))]
 public partial class PathfindingFindNextNodeSystem : SystemBase
 {
     private EntityQuery dataCollectionQuerry;
@@ -23,14 +23,13 @@ public partial class PathfindingFindNextNodeSystem : SystemBase
     {
         int entitiesInQuery = dataCollectionQuerry.CalculateEntityCount();
         NativeHashMap<int, PathfindingNodeMapData> pathfindingNodesMap = new NativeHashMap<int, PathfindingNodeMapData>(entitiesInQuery, Allocator.TempJob);
-        var mapWriter = pathfindingNodesMap.AsParallelWriter();
 
-        var dataCollection = Entities
+        Entities
             .WithStoreEntityQueryInField(ref dataCollectionQuerry)
             .ForEach((Entity self, in PathfindingNodeData node) =>
             {
-                mapWriter.TryAdd(node.nodeId, new PathfindingNodeMapData { nodeEntity = self, nodeData = node});
-            }).ScheduleParallel(Dependency);
+                pathfindingNodesMap.Add(node.nodeId, new PathfindingNodeMapData { nodeEntity = self, nodeData = node});
+            }).Run();
 
         EntityCommandBufferSystem ecbs = World.GetExistingSystem<EndSimulationEntityCommandBufferSystem>();
         EntityCommandBuffer.ParallelWriter parallelEcb = ecbs.CreateCommandBuffer().AsParallelWriter();
@@ -69,7 +68,7 @@ public partial class PathfindingFindNextNodeSystem : SystemBase
                         velocity = direction * minionStats.speed
                     };
                 }
-            }).ScheduleParallel(dataCollection);
+            }).ScheduleParallel(Dependency);
         ecbs.AddJobHandleForProducer(finalJobHandle);
 
         Dependency = finalJobHandle;

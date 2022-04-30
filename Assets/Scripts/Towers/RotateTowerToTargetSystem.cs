@@ -8,9 +8,8 @@ public partial class RotateTowerToTargetSystem : SystemBase
     private const float damping = 20f;
     protected override void OnUpdate()
     {
+        if (!GamePlayPhaseSystem.isGamePlayPhase) return;
         float deltaTime = Time.DeltaTime;
-        bool isGamePlayPhase = GamePlayPhaseSystem.isGamePlayPhase;
-        if (!isGamePlayPhase) return;
 
         Entities.ForEach((ref Rotation rotation, in LocalToWorld translation, in MinionSeekingComponent target) =>
         {

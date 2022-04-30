@@ -4,28 +4,39 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 public partial class GamePlayPhaseSystem : SystemBase
 {
     public static bool isGamePlayPhase = false;
-    EntityQuery getGamePlayPhaseComponents;
+    private bool giveOutMoney = false;
     protected override void OnUpdate()
     {
         float dt = Time.DeltaTime;
         Entities
             .WithStructuralChanges()
-            .WithStoreEntityQueryInField(ref getGamePlayPhaseComponents)
-            .ForEach((ref GamePlayPhaseDataComponent gamePlayPhaseData) => {
-                if (gamePlayPhaseData.phaseDuration > 0)
+            .ForEach((Entity self, ref GamePlayPhaseDataComponent gamePlayPhaseData, in HasTurnTag hasTurn) => {
+                if (gamePlayPhaseData.phaseTimer > 0)
                 {
-                    gamePlayPhaseData.phaseDuration -= dt;
+                    gamePlayPhaseData.phaseTimer -= dt;
                     isGamePlayPhase = true;
                 }
                 else
                 {
+                    gamePlayPhaseData.phaseTimer = gamePlayPhaseData.phaseDuration;
                     isGamePlayPhase = false;
-                    EntityManager.DestroyEntity(getGamePlayPhaseComponents);
+                    EntityManager.RemoveComponent<HasTurnTag>(self);
+                    giveOutMoney = true;
                 }
         }).Run();
+
+        if (giveOutMoney)
+        {
+            Entities
+                .ForEach((ref MoneyComponent moneyComponent) => {
+                    moneyComponent.money += 300;
+                }).ScheduleParallel();
+            giveOutMoney = false;
+        }
     }
 }

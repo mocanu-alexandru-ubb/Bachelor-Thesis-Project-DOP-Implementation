@@ -10,9 +10,8 @@ public partial class StandardTurretFireSystem : SystemBase
 {
     protected override void OnUpdate()
     {
+        if (!GamePlayPhaseSystem.isGamePlayPhase) return;
         float deltaTime = Time.DeltaTime;
-        bool isGamePlayPhase = GamePlayPhaseSystem.isGamePlayPhase;
-        if (!isGamePlayPhase) return;
 
         Entities
             .WithName("Standart_Turret_Fire")

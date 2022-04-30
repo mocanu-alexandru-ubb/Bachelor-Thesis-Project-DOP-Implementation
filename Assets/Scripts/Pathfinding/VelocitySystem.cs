@@ -4,14 +4,14 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 public partial class VelocitySystem : SystemBase
 {
     protected override void OnUpdate()
     {
         float deltaTime = Time.DeltaTime;
-        bool isGamePlayPhase = GamePlayPhaseSystem.isGamePlayPhase;
-        if (!isGamePlayPhase) return;
+        if (!GamePlayPhaseSystem.isGamePlayPhase) return;
 
         Entities
             .ForEach((ref Translation translation, in VelocityComponent velocity, in MinionComponent minion) =>

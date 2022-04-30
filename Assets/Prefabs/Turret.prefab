@@ -226,7 +226,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd3369e675e05374ea7aba6ef66bc217, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  towerRange: 2.5
+  towerRange: 4
 --- !u!114 &6216645651417895840
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -278,8 +278,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9694daa7f4999dc4bb86c599c3276c32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  owner: 2
-  damage: 0
+  ownerNode: {fileID: 0}
 --- !u!1 &8398724322867231971
 GameObject:
   m_ObjectHideFlags: 0

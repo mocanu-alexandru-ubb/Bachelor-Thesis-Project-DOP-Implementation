@@ -8,4 +8,5 @@ using Unity.Mathematics;
 public struct GamePlayPhaseDataComponent : IComponentData
 {
     public float phaseDuration;
+    public float phaseTimer;
 }

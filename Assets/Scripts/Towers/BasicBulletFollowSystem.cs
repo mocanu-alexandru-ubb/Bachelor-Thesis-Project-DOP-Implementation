@@ -8,7 +8,7 @@ using UnityEngine;
 
 public partial class BasicBulletFollowSystem : SystemBase
 {
-    private float speed = 5f;
+    public float speed = 5f;
     private EntityQuery dataCollectionQuery;
 
     private struct MinionData
@@ -23,7 +23,7 @@ public partial class BasicBulletFollowSystem : SystemBase
         NativeHashMap<int, MinionData> minionMap =  new NativeHashMap<int, MinionData>(dataCollectionQuery.CalculateEntityCount(), Allocator.TempJob);
         var mapWrriter = minionMap.AsParallelWriter();
 
-        Entities
+        var dataCollectionJob = Entities
             .WithStoreEntityQueryInField(ref dataCollectionQuery)
             .ForEach((Entity minionEntity, in MinionComponent minionTag, in LocalToWorld transform, in EnitityUniqueIdComponent enitityUniqueId) =>
             {
@@ -32,32 +32,39 @@ public partial class BasicBulletFollowSystem : SystemBase
                     position = transform.Position,
                     entity = minionEntity
                 });
-            }).Schedule();
+            }).ScheduleParallel(Dependency);
 
-        Entities
-            .WithStructuralChanges()
+        EntityCommandBufferSystem ecbs = World.GetExistingSystem<EndSimulationEntityCommandBufferSystem>();
+        EntityCommandBuffer.ParallelWriter parallelEcb = ecbs.CreateCommandBuffer().AsParallelWriter();
+
+        Entity bulletDestruction = MinionSpawnerPrefabConvertor.bulletDesctructionToSpawn;
+        float localSpeed = speed;
+
+        var jobHandle = Entities
             .WithReadOnly(minionMap)
             .WithDisposeOnCompletion(minionMap)
-            .ForEach((Entity bullet, ref Translation transform, ref BasicBulletFollowComponent followTarget) =>
+            .WithDisposeOnCompletion(parallelEcb)
+            .ForEach((int entityInQueryIndex, Entity bullet, ref Translation transform, ref BasicBulletFollowComponent followTarget) =>
             {
                 if (!minionMap.ContainsKey(followTarget.targetId))
                 {
-                    EntityManager.DestroyEntity(bullet);
+                    parallelEcb.DestroyEntity(entityInQueryIndex, bullet);
                 }
                 else
                 {
                     float3 targetPosition = minionMap[followTarget.targetId].position;
                     Vector3 direction = targetPosition - transform.Value;
-                    float distanceToMove = speed * deltaTime;
+                    float distanceToMove = localSpeed * deltaTime;
                     if (direction.sqrMagnitude < distanceToMove * distanceToMove)
                     {
-                        Entity bulletDestroy = EntityManager.Instantiate(MinionSpawnerPrefabConvertor.bulletDesctructionToSpawn);
-                        EntityManager.SetComponentData(bulletDestroy,
-                            new Translation { Value = new float3(transform.Value) });
-                        EntityManager.AddComponentData(minionMap[followTarget.targetId].entity, new TakeDamageComponent { damageToTake = 1 });
+                        Entity bulletDestroy = parallelEcb.Instantiate(entityInQueryIndex, bulletDestruction);
+                        parallelEcb.SetComponent(entityInQueryIndex, bulletDestroy, new Translation { Value = new float3(transform.Value) });
+                        parallelEcb.AddComponent(entityInQueryIndex, minionMap[followTarget.targetId].entity, new TakeDamageComponent { damageToTake = 1 });
                     }
                     transform.Value += new float3(direction.normalized * distanceToMove);
                 }
-            }).Run();
+            }).ScheduleParallel(dataCollectionJob);
+        ecbs.AddJobHandleForProducer(jobHandle);
+        Dependency = jobHandle;
     }
 }

@@ -21,8 +21,7 @@ public partial class TargetFinderSystem : SystemBase
 
     protected override void OnUpdate()
     {
-        bool isGamePlayPhase = GamePlayPhaseSystem.isGamePlayPhase;
-        if (!isGamePlayPhase) return;
+        if (!GamePlayPhaseSystem.isGamePlayPhase) return;
 
         int entitiesInQuery = query.CalculateEntityCount();
         NativeList<MinionTargetingData> possibleTargets = new NativeList<MinionTargetingData>(entitiesInQuery, Allocator.TempJob);

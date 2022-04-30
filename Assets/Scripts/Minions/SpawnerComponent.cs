@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -11,16 +13,17 @@ public struct SpawnerComponentData : IComponentData
     public float3 spawnPosition;
     public PathfindingTargetData targetNode;
 }
+
 [DisallowMultipleComponent]
 public class SpawnerComponent : MonoBehaviour, IConvertGameObjectToEntity
 {
-    public PathfindingNodeComponent firstNode;
+    public PathfindingNodeComponent initialEnemy;
     public float spawnsPerSecond = 1f;
     public float spawnCooldown = 0f;
 
-    public void Start()
+    private void Awake()
     {
-        firstNode = GetComponent<PathfindingNodeComponent>();
+        initialEnemy = GetComponent<PathfindingNodeComponent>();
     }
 
     public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
@@ -33,9 +36,10 @@ public class SpawnerComponent : MonoBehaviour, IConvertGameObjectToEntity
             targetNode = new PathfindingTargetData
             {
                 nodePosition = transform.position,
-                nodeId = firstNode.currentNodeId,
+                nodeId = initialEnemy.currentNodeId,
                 nodeIsHomebase = false
             }
         });
+        dstManager.AddBuffer<MinionSpawnQueue>(entity);
     }
 }
